@@ -64,3 +64,23 @@ export const removeRefreshToken = async (): Promise<void> => {
   }
 }
 
+
+// Balans ko'rinish holatini olish
+export const getBalanceVisible = async (): Promise<string | null> => {
+  try {
+    const visibility = await AsyncStorage.getItem("balanceVisible");
+    return visibility;
+  } catch (error) {
+    console.error("Error reading balance visibility:", error);
+    return null;
+  }
+};
+
+// Balans ko'rinish holatini o'rnatish
+export const setBalanceVisible = async (visible: string): Promise<void> => {
+  try {
+    await AsyncStorage.setItem("balanceVisible", visible);
+  } catch (error) {
+    console.error("Error setting balance visibility:", error);
+  }
+};

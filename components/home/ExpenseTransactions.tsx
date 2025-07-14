@@ -3,7 +3,7 @@ import { FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-export default function ExpenseTransactions() {
+export default function ExpenseTransactions({refreshing}: any) {
   return (
     <View style={styles.mainContainer}>
       {/* Umumiy balans card */}

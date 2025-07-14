@@ -1,14 +1,46 @@
 import colors from '@/constants/Colors';
 import { globalStyles } from '@/constants/Styles';
-import React, { useState } from 'react';
+import { useTransaction } from '@/context/TransactionContext';
+import api from '@/services/api';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import BalanceCard from './ui/BalanceCard';
 import Selection from './ui/Selection';
 import TransactionTypeSelector from './ui/TransactionTypeSelector';
 
 
+
 export default function HeaderComponent() {
-  const [selectedMonth, setSelectedMonth] = useState('may-2024');
+
+  interface Months {
+    label: string;
+    value: string;
+  }
+  const [months, setMonths] = useState<Months[]>([]);
+  const {selectedMonth, setSelectedMonth} = useTransaction();
+
+  const fetchData = async () => {
+    try {
+      const response = await api.get('/api/transactions/months');
+      console.log('Fetched months:', response.data);
+      setMonths(response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(()=>{
+    if(months.length > 0){
+      setSelectedMonth(months[months.length-1].value)
+    }
+  }, [months])
+
+  
+  
 
   return (
     <View style={styles.root}>
@@ -17,8 +49,9 @@ export default function HeaderComponent() {
         <View style={styles.nav}>
           <Text style={styles.brand}>PayBook</Text>
           
-          <Selection 
+          <Selection
             value={selectedMonth} 
+            months={months}
             onValueChange={setSelectedMonth} 
           />
         </View>
@@ -61,3 +94,5 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
 });
+
+

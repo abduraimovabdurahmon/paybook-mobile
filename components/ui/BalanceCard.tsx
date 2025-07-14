@@ -1,14 +1,58 @@
 import colors from '@/constants/Colors';
+import { useTransaction } from '@/context/TransactionContext';
+import api from '@/services/api';
+import { getBalanceVisible, setBalanceVisible } from '@/services/storage';
+import { beautySumm } from '@/utils/beautySumm';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function BalanceCard() {
   const [showBalance, setShowBalance] = useState(false);
-  const balanceAmount = "1,234,567 so'm"; // Bu yerda haqiqiy balans qiymati bo'lishi kerak
+  const [balanceAmount, setBalanceAmount] = useState(0);
 
-  const toggleBalanceVisibility = () => {
-    setShowBalance(!showBalance);
+  const { selectedMonth, isLoading, setIsLoading } = useTransaction();
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true); // Yuklash boshlanadi
+      const balanceVisibility = await getBalanceVisible();
+      setShowBalance(balanceVisibility === 'true'); // "true" stringini boolean ga aylantirish
+
+      const response = await api.get('/api/transactions/balance', {
+        params: {
+          month: selectedMonth,
+        },
+      });
+      console.log('Fetched balance:', response.data.balance);
+      setBalanceAmount(response.data.balance);
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    } finally {
+      setIsLoading(false); // Yuklash tugadi
+    }
+  };
+
+  useEffect(() => {
+    if (selectedMonth) {
+      fetchData();
+    }
+  }, [selectedMonth]);
+
+  useEffect(()=>{
+    if(!balanceAmount){
+      setIsLoading(true);
+    }
+  },[])
+
+  const toggleBalanceVisibility = async () => {
+    const newVisibility = !showBalance;
+    setShowBalance(newVisibility);
+    try {
+      await setBalanceVisible(newVisibility.toString()); // Boolean ni string ga aylantirib saqlash
+    } catch (error) {
+      console.error('Error saving balance visibility:', error);
+    }
   };
 
   return (
@@ -17,17 +61,23 @@ export default function BalanceCard() {
         <Text style={styles.title}>Umumiy balans</Text>
       </View>
       <View style={styles.balanceContainer}>
-        <Text style={styles.balanceText}>
-          {showBalance ? balanceAmount : '**************'}
-        </Text>
-        <TouchableOpacity onPress={toggleBalanceVisibility} style={styles.eyeButton}>
-          <Ionicons 
-            name={showBalance ? 'eye-off' : 'eye'} 
-            size={24} 
-            color="#FFFFFF" 
-            style={styles.eyeIcon} 
-          />
-        </TouchableOpacity>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <Text style={styles.balanceText}>
+              {showBalance ? beautySumm(balanceAmount) + " so'm" : '**************'}
+            </Text>
+            <TouchableOpacity style={styles.eyeButton} onPress={toggleBalanceVisibility}>
+              <Ionicons
+                name={showBalance ? 'eye-off' : 'eye'}
+                size={24}
+                color="#FFFFFF"
+                style={styles.eyeIcon}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -66,8 +116,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   balanceText: {
-    color: "#fff",
-    fontSize: 22,
+    color: '#fff',
+    fontSize: 18,
     letterSpacing: 1,
     flex: 1,
     fontWeight: '500',

@@ -1,9 +1,14 @@
 import colors from "@/constants/Colors";
+import { useTransaction } from "@/context/TransactionContext";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 
-export default function IncomeTransactions() {
+export default function IncomeTransactions({refreshing}: any) {
+
+  const {isLoading} = useTransaction();
+
+
   return (
     <View style={styles.mainContainer}>
       {/* Umumiy balans card */}
@@ -18,7 +23,15 @@ export default function IncomeTransactions() {
             />
             <Text style={styles.title}>Umumiy kirim:</Text>
           </View>
-          <Text style={styles.amount}>+12,750,000 so'm</Text>
+          <Text style={styles.amount}>
+            {
+              isLoading ? (
+                <ActivityIndicator color={colors.dark}/>
+              ):(
+                "+12,750,000 so'm"
+              )
+            }
+          </Text>
         </View>
       </View>
 
