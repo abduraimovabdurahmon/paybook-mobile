@@ -1,4 +1,5 @@
 import colors from '@/constants/Colors';
+import { useApp } from '@/context/AppContext';
 import { useTransaction } from '@/context/TransactionContext';
 import api from '@/services/api';
 import { getBalanceVisible, setBalanceVisible } from '@/services/storage';
@@ -10,26 +11,27 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 export default function BalanceCard() {
   const [showBalance, setShowBalance] = useState(false);
   const [balanceAmount, setBalanceAmount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);  // Bu yerda isLoading e'lon qilindi
 
-  const { selectedMonth, isLoading, setIsLoading } = useTransaction();
+  const { selectedMonth } = useTransaction();
+  const { refreshing, setRefreshing } = useApp();
 
   const fetchData = async () => {
     try {
-      setIsLoading(true); // Yuklash boshlanadi
+      setIsLoading(true);  // Fetch boshlanishida loading true
       const balanceVisibility = await getBalanceVisible();
-      setShowBalance(balanceVisibility === 'true'); // "true" stringini boolean ga aylantirish
+      setShowBalance(balanceVisibility === 'true');
 
       const response = await api.get('/api/transactions/balance', {
-        params: {
-          month: selectedMonth,
-        },
+        params: { month: selectedMonth },
       });
       console.log('Fetched balance:', response.data.balance);
       setBalanceAmount(response.data.balance);
+      setRefreshing(false);
     } catch (error) {
       console.error('Error fetching balance:', error);
     } finally {
-      setIsLoading(false); // Yuklash tugadi
+      setIsLoading(false);  // Fetch tugagach loading false
     }
   };
 
@@ -39,17 +41,17 @@ export default function BalanceCard() {
     }
   }, [selectedMonth]);
 
-  useEffect(()=>{
-    if(!balanceAmount){
-      setIsLoading(true);
+  useEffect(() => {
+    if (refreshing) {
+      fetchData();
     }
-  },[])
+  }, [refreshing]);
 
   const toggleBalanceVisibility = async () => {
     const newVisibility = !showBalance;
     setShowBalance(newVisibility);
     try {
-      await setBalanceVisible(newVisibility.toString()); // Boolean ni string ga aylantirib saqlash
+      await setBalanceVisible(newVisibility.toString());
     } catch (error) {
       console.error('Error saving balance visibility:', error);
     }
@@ -90,10 +92,7 @@ const styles = StyleSheet.create({
     padding: 24,
     marginTop: 40,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,

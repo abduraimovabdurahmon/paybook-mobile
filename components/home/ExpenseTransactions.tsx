@@ -1,9 +1,39 @@
 import colors from "@/constants/Colors";
+import { useTransaction } from "@/context/TransactionContext";
+import api from "@/services/api";
+import { beautySumm } from "@/utils/beautySumm";
 import { FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function ExpenseTransactions({refreshing}: any) {
+const { selectedMonth, refreshSignal } = useTransaction();
+  const [expenseBalance, setExpenseBalance] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = async () => {
+    if (!selectedMonth) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await api.get('/api/transactions/expense/balance', {
+        params: { month: selectedMonth },
+      });
+      setExpenseBalance(response.data.balance);
+    } catch (error) {
+      console.error('Error fetching expense transactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedMonth, refreshSignal]);
+
   return (
     <View style={styles.mainContainer}>
       {/* Umumiy balans card */}
@@ -18,7 +48,13 @@ export default function ExpenseTransactions({refreshing}: any) {
             />
             <Text style={styles.title}>Umumiy chiqim:</Text>
           </View>
-          <Text style={styles.amount}>-5,234,234 so'm</Text>
+          <Text style={styles.amount}>
+            {isLoading ? (
+              <ActivityIndicator color={colors.red}/>
+            ) : (
+              <>-{beautySumm(expenseBalance)}</>
+            )}
+          </Text>
         </View>
       </View>
 

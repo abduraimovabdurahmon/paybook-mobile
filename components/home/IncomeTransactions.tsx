@@ -1,13 +1,38 @@
 import colors from "@/constants/Colors";
 import { useTransaction } from "@/context/TransactionContext";
+import api from "@/services/api";
+import { beautySumm } from "@/utils/beautySumm";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function IncomeTransactions({refreshing}: any) {
+ const { selectedMonth, refreshSignal } = useTransaction();
+  const [incomeBalance, setIncomeBalance] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const {isLoading} = useTransaction();
+  const fetchData = async () => {
+    if (!selectedMonth) {
+      setIsLoading(false);
+      return;
+    }
 
+    try {
+      setIsLoading(true);
+      const response = await api.get('/api/transactions/income/balance', {
+        params: { month: selectedMonth },
+      });
+      setIncomeBalance(response.data.balance);
+    } catch (error) {
+      console.error('Error fetching income transactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedMonth, refreshSignal]);
 
   return (
     <View style={styles.mainContainer}>
@@ -24,13 +49,11 @@ export default function IncomeTransactions({refreshing}: any) {
             <Text style={styles.title}>Umumiy kirim:</Text>
           </View>
           <Text style={styles.amount}>
-            {
-              isLoading ? (
-                <ActivityIndicator color={colors.dark}/>
-              ):(
-                "+12,750,000 so'm"
-              )
-            }
+            {isLoading ? (
+              <ActivityIndicator color={colors.green}/>
+            ) : (
+              <>{beautySumm(incomeBalance)}</>
+            )}
           </Text>
         </View>
       </View>

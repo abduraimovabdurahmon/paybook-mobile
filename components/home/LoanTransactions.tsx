@@ -1,9 +1,44 @@
 import colors from "@/constants/Colors";
+import { useTransaction } from "@/context/TransactionContext";
+import api from "@/services/api";
+import { beautySumm } from "@/utils/beautySumm";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 
-export default function LoanTransactions({refreshing}: any) {
+type DebtBalanceResponse = {
+  totalBorrow: number;
+  totalLend: number;
+}
+
+export default function LoanTransactions() {
+const { selectedMonth, refreshSignal } = useTransaction();
+  const [debtBalance, setDebtBalance] = useState<DebtBalanceResponse>({ totalBorrow: 0, totalLend: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = async () => {
+    if (!selectedMonth) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await api.get('/api/transactions/debt/balance', {
+        params: { month: selectedMonth },
+      });
+      setDebtBalance(response.data);
+    } catch (error) {
+      console.error('Error fetching debt balance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [selectedMonth, refreshSignal]);
+
   return (
     <View style={styles.mainContainer}>
       {/* Umumiy qarz balansi card */}
@@ -20,7 +55,13 @@ export default function LoanTransactions({refreshing}: any) {
               />
               <Text style={styles.title}>Qarz oldim:</Text>
             </View>
-            <Text style={[styles.amount, {color: colors.red}]}>-2,450,000 so'm</Text>
+            <Text style={[styles.amount, {color: colors.red}]}>
+              {isLoading ? (
+                <ActivityIndicator color={colors.red}/>
+              ) : (
+                <>-{beautySumm(debtBalance.totalBorrow)}</>
+              )}
+            </Text>
           </View>
           
           {/* Qarz berdim (I'm owed) */}
@@ -34,7 +75,13 @@ export default function LoanTransactions({refreshing}: any) {
               />
               <Text style={styles.title}>Qarz berdim:</Text>
             </View>
-            <Text style={[styles.amount, {color: colors.green}]}>+1,750,000 so'm</Text>
+             <Text style={[styles.amount, {color: colors.green}]}>
+              {isLoading ? (
+                <ActivityIndicator color={colors.green}/>
+              ) : (
+                <>+{beautySumm(debtBalance.totalLend)}</>
+              )}
+            </Text>
           </View>
         </View>
       </View>

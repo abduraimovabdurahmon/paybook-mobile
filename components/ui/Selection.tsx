@@ -25,6 +25,7 @@ const Selection = ({ onValueChange, value, months }: SelectionProps) => {
 
   return (
     <RNPickerSelect
+      key={value}
       onValueChange={onValueChange}
       items={months}
       value={value}

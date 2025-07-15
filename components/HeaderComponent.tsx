@@ -1,23 +1,23 @@
 import colors from '@/constants/Colors';
 import { globalStyles } from '@/constants/Styles';
+import { useApp } from '@/context/AppContext';
 import { useTransaction } from '@/context/TransactionContext';
 import api from '@/services/api';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import BalanceCard from './ui/BalanceCard';
 import Selection from './ui/Selection';
 import TransactionTypeSelector from './ui/TransactionTypeSelector';
 
-
-
 export default function HeaderComponent() {
-
   interface Months {
     label: string;
     value: string;
   }
+
   const [months, setMonths] = useState<Months[]>([]);
-  const {selectedMonth, setSelectedMonth} = useTransaction();
+  const {refreshing, setRefreshing} = useApp();
+  const { selectedMonth, setSelectedMonth } = useTransaction();
 
   const fetchData = async () => {
     try {
@@ -26,49 +26,64 @@ export default function HeaderComponent() {
       setMonths(response.data);
     } catch (error) {
       console.error('Error fetching data:', error);
+    } finally {
+      console.log('Data fetching completed');
     }
-  }
+  };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  useEffect(()=>{
-    if(months.length > 0){
-      setSelectedMonth(months[months.length-1].value)
-    }
-  }, [months])
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  
-  
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await sleep(2000);
+    setRefreshing(false);
+  }
+
+  useEffect(() => {
+    if (months.length > 0) {
+      setSelectedMonth(months[months.length - 1].value);
+    }
+  }, [months]);
 
   return (
     <View style={styles.root}>
-      <View style={[globalStyles.container]}>
-        {/* Navbar */}
-        <View style={styles.nav}>
-          <Text style={styles.brand}>PayBook</Text>
-          
-          <Selection
-            value={selectedMonth} 
-            months={months}
-            onValueChange={setSelectedMonth} 
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => handleRefresh()}
+            colors={[colors.primary]}
+            progressBackgroundColor={colors.background}
           />
-        </View>
+        }
+      >
+        <View style={[globalStyles.container]}>
+          {/* Navbar */}
+          <View style={styles.nav}>
+            <Text style={styles.brand}>PayBook</Text>
+            <Selection
+              value={selectedMonth}
+              months={months}
+              onValueChange={setSelectedMonth}
+            />
+          </View>
 
-        {/* Balance card */}
-        <BalanceCard />
-        
-        {/* Transaction type selector */}
-        <View style={styles.transactionTypeSelectorBox}>
-          <TransactionTypeSelector />
+          {/* Balance card */}
+          <BalanceCard />
+
+          {/* Transaction type selector */}
+          <View style={styles.transactionTypeSelectorBox}>
+            <TransactionTypeSelector />
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
-
-// Stylar o'zgarishsiz qoldi...
 
 const styles = StyleSheet.create({
   root: {
@@ -94,5 +109,3 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
 });
-
-
