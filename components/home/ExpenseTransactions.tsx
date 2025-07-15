@@ -1,7 +1,7 @@
 import colors from "@/constants/Colors";
 import { useTransaction } from "@/context/TransactionContext";
 import api from "@/services/api";
-import { beautySumm } from "@/utils/beautySumm";
+import { beautySumm } from "@/utils/functions";
 import { FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -33,6 +33,9 @@ const { selectedMonth, refreshSignal } = useTransaction();
   useEffect(() => {
     fetchData();
   }, [selectedMonth, refreshSignal]);
+
+
+  
 
   return (
     <View style={styles.mainContainer}>

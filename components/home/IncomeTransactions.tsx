@@ -1,30 +1,68 @@
 import colors from "@/constants/Colors";
+import { useApp } from "@/context/AppContext";
 import { useTransaction } from "@/context/TransactionContext";
 import api from "@/services/api";
-import { beautySumm } from "@/utils/beautySumm";
+
+import {
+  beautySumm,
+  formatDateDisplay,
+  formatTime,
+  groupTransactionsByDate,
+  shortenDescription,
+} from "@/utils/functions";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-export default function IncomeTransactions({refreshing}: any) {
- const { selectedMonth, refreshSignal } = useTransaction();
+interface IncomeTransaction {
+  id: string;
+  icon: string;
+  bgColor: string;
+  title: string;
+  description: string;
+  amount: number;
+  createdAt: string;
+}
+
+export default function IncomeTransactions() {
+  const { selectedMonth, refreshSignal } = useTransaction();
   const [incomeBalance, setIncomeBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [transactions, setTransactions] = useState<IncomeTransaction[]>([]);
+  const { refreshing, setRefreshing } = useApp();
 
   const fetchData = async () => {
     if (!selectedMonth) {
       setIsLoading(false);
       return;
     }
+    setTransactions([]);
 
     try {
       setIsLoading(true);
-      const response = await api.get('/api/transactions/income/balance', {
+      const balanceResponse = await api.get(
+        "/api/transactions/income/balance",
+        {
+          params: { month: selectedMonth },
+        }
+      );
+
+      const transactionsResponse = await api.get("/api/transactions/income", {
         params: { month: selectedMonth },
       });
-      setIncomeBalance(response.data.balance);
+
+      setIncomeBalance(balanceResponse.data.balance);
+      setTransactions(transactionsResponse.data.transactions);
+      setRefreshing(false);
     } catch (error) {
-      console.error('Error fetching income transactions:', error);
+      console.error("Error fetching income transactions:", error);
     } finally {
       setIsLoading(false);
     }
@@ -33,6 +71,19 @@ export default function IncomeTransactions({refreshing}: any) {
   useEffect(() => {
     fetchData();
   }, [selectedMonth, refreshSignal]);
+
+    useEffect(() => {
+      if (refreshing) {
+        fetchData();
+      }
+    }, [refreshing]);
+
+  // Handle transaction press
+  const handleTransactionPress = (transaction: IncomeTransaction) => {
+    console.log("Transaction pressed:", transaction.id);
+  };
+
+  const groupedTransactions = groupTransactionsByDate(transactions);
 
   return (
     <View style={styles.mainContainer}>
@@ -50,7 +101,7 @@ export default function IncomeTransactions({refreshing}: any) {
           </View>
           <Text style={styles.amount}>
             {isLoading ? (
-              <ActivityIndicator color={colors.green}/>
+              <ActivityIndicator color={colors.green} />
             ) : (
               <>{beautySumm(incomeBalance)}</>
             )}
@@ -63,170 +114,68 @@ export default function IncomeTransactions({refreshing}: any) {
         showsVerticalScrollIndicator={false}
         style={styles.transactionsScroll}
       >
-        {/* Sana: Bugun */}
-        <Text style={styles.transactionsDate}>18-may</Text>
-        
-        {/* 1. Oylik ish haqqi */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.blue }]}>
-            <MaterialIcons name="work" size={24} color={colors.white} />
+        {isLoading && (
+          <View style={styles.emptyContainer}>
+            <ActivityIndicator
+              size="large"
+              color={colors.primary}
+              style={{ marginTop: 20 }}
+            />
+            <Text style={styles.emptyText}>Yuklanmoqda ...</Text>
           </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Oylik ish haqqi</Text>
-            <Text style={styles.transactionDescription}>Asosiy ish joyidan oylik</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>12:03</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+5,600,000 so'm</Text>
-          </View>
-        </View>
+        )}
 
-        {/* 2. Freelance ish */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.cyan }]}>
-            <MaterialIcons name="laptop" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Freelance ish</Text>
-            <Text style={styles.transactionDescription}>Veb-sayt loyihasi uchun to'lov</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>09:45</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+1,200,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* Sana: Kecha */}
-        <Text style={styles.transactionsDate}>17-may</Text>
-
-        {/* 3. Biznes daromadi */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.purple }]}>
-            <MaterialIcons name="business" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Biznes daromadi</Text>
-            <Text style={styles.transactionDescription}>Do'kon savdo daromadi</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>15:30</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+2,500,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* 4. Investitsiya foydasi */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.yellow }]}>
-            <MaterialIcons name="trending-up" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Investitsiya foydasi</Text>
-            <Text style={styles.transactionDescription}>Fond bozoridagi foyda</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>14:00</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+800,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* Sana: 16-may */}
-        <Text style={styles.transactionsDate}>16-may</Text>
-
-        {/* 5. Ijara to'lovi */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.teal }]}>
-            <MaterialIcons name="home" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Ijara to'lovi</Text>
-            <Text style={styles.transactionDescription}>Xonadon ijarasi uchun to'lov</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>10:15</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+1,000,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* 6. Bonus */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.orange }]}>
-            <Ionicons name="gift-outline" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Bonus</Text>
-            <Text style={styles.transactionDescription}>Ishdagi choraklik bonus</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>11:00</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+500,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* Sana: 15-may */}
-        <Text style={styles.transactionsDate}>15-may</Text>
-
-        {/* 7. Sotuvdan tushum */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.pink }]}>
-            <MaterialIcons name="shopping-cart" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Sotuvdan tushum</Text>
-            <Text style={styles.transactionDescription}>Eski mebel sotilishi</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>16:20</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+300,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* 8. Naqd pul qaytarish */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.indigo }]}>
-            <Ionicons name="return-up-back-outline" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Naqd pul qaytarish</Text>
-            <Text style={styles.transactionDescription}>Do'stdan qarz qaytarildi</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>13:10</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+400,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* Sana: 14-may */}
-        <Text style={styles.transactionsDate}>14-may</Text>
-
-        {/* 9. Grant */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.deepPurple }]}>
-            <MaterialIcons name="school" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Grant</Text>
-            <Text style={styles.transactionDescription}>Ilmiy loyiha uchun grant</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>08:30</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+350,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* 10. Sovg'a puli */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, { backgroundColor: colors.red }]}>
-            <Ionicons name="heart-outline" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Sovg'a puli</Text>
-            <Text style={styles.transactionDescription}>Tug'ilgan kun sovg'asi</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>19:00</Text>
-            <Text style={[styles.transactionAmount, { color: colors.green }]}>+100,000 so'm</Text>
-          </View>
-        </View>
+        {Object.entries(groupedTransactions).map(
+          ([date, transactionsForDate]) => (
+            <View key={date}>
+              <Text style={styles.transactionsDate}>
+                {formatDateDisplay(transactionsForDate[0].createdAt)}
+              </Text>
+              {transactionsForDate.map((transaction) => (
+                <TouchableOpacity
+                  key={transaction.id}
+                  style={styles.transactionBox}
+                  onPress={() => handleTransactionPress(transaction)}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={[
+                      styles.transactionIconBox,
+                      { backgroundColor: transaction.bgColor || colors.blue },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name={(transaction.icon as any) || "attach-money"}
+                      size={24}
+                      color={colors.white}
+                    />
+                  </View>
+                  <View style={styles.transactionInfo}>
+                    <Text style={styles.transactionTitle}>
+                      {transaction.title}
+                    </Text>
+                    <Text style={styles.transactionDescription}>
+                      {shortenDescription(transaction.description)}
+                    </Text>
+                  </View>
+                  <View style={styles.transactionDetails}>
+                    <Text style={styles.transactionTime}>
+                      {formatTime(transaction.createdAt)}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.transactionAmount,
+                        { color: colors.green },
+                      ]}
+                    >
+                      +{beautySumm(transaction.amount)} so'm
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )
+        )}
       </ScrollView>
     </View>
   );
@@ -237,10 +186,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-  },
-  root: {
-    flex: 1,
-    width: "100%",
   },
   card: {
     backgroundColor: colors.white,
@@ -301,7 +246,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
-    width: "100%",
+    width: "99%",
+    marginLeft: "auto",
+    marginRight: "auto",
     marginBottom: 12,
   },
   transactionIconBox: {
@@ -318,7 +265,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   transactionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: colors.dark,
     fontWeight: "500",
     fontFamily: "JetBrainsMono-Medium",
@@ -343,5 +290,16 @@ const styles = StyleSheet.create({
     color: colors.green,
     fontWeight: "500",
     fontFamily: "JetBrainsMono-Bold",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.gray,
+    fontFamily: "JetBrainsMono-Regular",
   },
 });

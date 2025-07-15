@@ -3,7 +3,8 @@ import { useApp } from '@/context/AppContext';
 import { useTransaction } from '@/context/TransactionContext';
 import api from '@/services/api';
 import { getBalanceVisible, setBalanceVisible } from '@/services/storage';
-import { beautySumm } from '@/utils/beautySumm';
+import { beautySumm } from '@/utils/functions';
+
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
