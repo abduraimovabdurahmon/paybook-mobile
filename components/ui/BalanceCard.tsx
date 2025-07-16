@@ -1,52 +1,36 @@
 import colors from '@/constants/Colors';
-import { useApp } from '@/context/AppContext';
 import { useTransaction } from '@/context/TransactionContext';
-import api from '@/services/api';
 import { getBalanceVisible, setBalanceVisible } from '@/services/storage';
 import { beautySumm } from '@/utils/functions';
-
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function BalanceCard() {
   const [showBalance, setShowBalance] = useState(false);
-  const [balanceAmount, setBalanceAmount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);  // Bu yerda isLoading e'lon qilindi
+  const [isLoading, setIsLoading] = useState(false);
+  const { generalBalance } = useTransaction();
+  const fadeAnim = useRef(new Animated.Value(0)).current; 
 
-  const { selectedMonth } = useTransaction();
-  const { refreshing, setRefreshing } = useApp();
-
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);  // Fetch boshlanishida loading true
-      const balanceVisibility = await getBalanceVisible();
-      setShowBalance(balanceVisibility === 'true');
-
-      const response = await api.get('/api/transactions/balance', {
-        params: { month: selectedMonth },
-      });
-      console.log('Fetched balance:', response.data.balance);
-      setBalanceAmount(response.data.balance);
-      setRefreshing(false);
-    } catch (error) {
-      console.error('Error fetching balance:', error);
-    } finally {
-      setIsLoading(false);  // Fetch tugagach loading false
-    }
+  const main = async () => {
+    const balanceVisibility = await getBalanceVisible();
+    setShowBalance(balanceVisibility === 'true');
   };
 
   useEffect(() => {
-    if (selectedMonth) {
-      fetchData();
-    }
-  }, [selectedMonth]);
+    main();
 
-  useEffect(() => {
-    if (refreshing) {
-      fetchData();
+    setIsLoading(generalBalance === null);
+
+    if (generalBalance ) {
+      fadeAnim.setValue(0); 
+      Animated.timing(fadeAnim, {
+        toValue: 1, 
+        duration: 500, 
+        useNativeDriver: true,
+      }).start();
     }
-  }, [refreshing]);
+  }, [generalBalance]);
 
   const toggleBalanceVisibility = async () => {
     const newVisibility = !showBalance;
@@ -68,9 +52,14 @@ export default function BalanceCard() {
           <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <Text style={styles.balanceText}>
-              {showBalance ? beautySumm(balanceAmount) + " so'm" : '**************'}
-            </Text>
+            <Animated.Text
+              style={[
+                styles.balanceText,
+                { opacity: fadeAnim },
+              ]}
+            >
+              {showBalance ? beautySumm(generalBalance) + " so'm" : '**************'}
+            </Animated.Text>
             <TouchableOpacity style={styles.eyeButton} onPress={toggleBalanceVisibility}>
               <Ionicons
                 name={showBalance ? 'eye-off' : 'eye'}

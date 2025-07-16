@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native'
 export default function index() {
   return (
     <View style={styles.root}>
-      <HeaderComponent />
+      <HeaderComponent page='statistics' />
       {/* Statistics komponenti */}
       <StatisticsView />
     </View>

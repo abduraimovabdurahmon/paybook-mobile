@@ -2,20 +2,20 @@ import React, { createContext, useContext, useState } from 'react';
 
 
 interface AppContextType {
-    refreshing: boolean;
-    setRefreshing: (refreshing: boolean) => void;
+    homeRefreshing: boolean;
+    setHomeRefreshing: (refreshing: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
     
-    const [refreshing, setRefreshing] = useState(false);
+    const [homeRefreshing, setHomeRefreshing] = useState(false);
     
 
 
   const value = { 
-    refreshing, setRefreshing
+    homeRefreshing, setHomeRefreshing
   }
   
   return (

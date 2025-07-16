@@ -1,10 +1,9 @@
 import colors from "@/constants/Colors";
 import { useTransaction } from "@/context/TransactionContext";
-import api from "@/services/api";
 import { beautySumm } from "@/utils/functions";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type DebtBalanceResponse = {
   totalBorrow: number;
@@ -12,32 +11,26 @@ type DebtBalanceResponse = {
 }
 
 export default function LoanTransactions() {
-const { selectedMonth, refreshSignal } = useTransaction();
-  const [debtBalance, setDebtBalance] = useState<DebtBalanceResponse>({ totalBorrow: 0, totalLend: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const fetchData = async () => {
-    if (!selectedMonth) {
-      setIsLoading(false);
-      return;
+  const {debtBalance} = useTransaction();
+
+  const fadeAnim = useRef(new Animated.Value(0)).current; 
+
+
+  useEffect(()=>{
+    setIsLoading(debtBalance.totalBorrow === null || debtBalance.totalLend === null);
+    if(debtBalance.totalBorrow && debtBalance.totalLend){
+      fadeAnim.setValue(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
     }
+  },[debtBalance])
 
-    try {
-      setIsLoading(true);
-      const response = await api.get('/api/transactions/debt/balance', {
-        params: { month: selectedMonth },
-      });
-      setDebtBalance(response.data);
-    } catch (error) {
-      console.error('Error fetching debt balance:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedMonth, refreshSignal]);
 
   return (
     <View style={styles.mainContainer}>
@@ -55,13 +48,13 @@ const { selectedMonth, refreshSignal } = useTransaction();
               />
               <Text style={styles.title}>Qarz oldim:</Text>
             </View>
-            <Text style={[styles.amount, {color: colors.red}]}>
+            <Animated.Text style={[styles.amount, {color: colors.red, opacity: fadeAnim}]}>
               {isLoading ? (
                 <ActivityIndicator color={colors.red}/>
               ) : (
                 <>-{beautySumm(debtBalance.totalBorrow)}</>
               )}
-            </Text>
+            </Animated.Text>
           </View>
           
           {/* Qarz berdim (I'm owed) */}
@@ -75,13 +68,13 @@ const { selectedMonth, refreshSignal } = useTransaction();
               />
               <Text style={styles.title}>Qarz berdim:</Text>
             </View>
-             <Text style={[styles.amount, {color: colors.green}]}>
+             <Animated.Text style={[styles.amount, {color: colors.green, opacity: fadeAnim}]}>
               {isLoading ? (
                 <ActivityIndicator color={colors.green}/>
               ) : (
                 <>+{beautySumm(debtBalance.totalLend)}</>
               )}
-            </Text>
+            </Animated.Text>
           </View>
         </View>
       </View>

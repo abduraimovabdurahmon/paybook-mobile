@@ -1,19 +1,12 @@
 import colors from "@/constants/Colors";
-import { useApp } from "@/context/AppContext";
+import { IncomeTransactionType } from "@/constants/Types";
 import { useTransaction } from "@/context/TransactionContext";
-import api from "@/services/api";
-
-import {
-  beautySumm,
-  formatDateDisplay,
-  formatTime,
-  groupTransactionsByDate,
-  shortenDescription,
-} from "@/utils/functions";
+import { beautySumm, formatDateDisplay, shortenDescription } from "@/utils/functions";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,69 +14,26 @@ import {
   View,
 } from "react-native";
 
-interface IncomeTransaction {
-  id: string;
-  icon: string;
-  bgColor: string;
-  title: string;
-  description: string;
-  amount: number;
-  createdAt: string;
-}
-
 export default function IncomeTransactions() {
-  const { selectedMonth, refreshSignal } = useTransaction();
-  const [incomeBalance, setIncomeBalance] = useState(0);
+  const { incomeBalance, incomeTransactions } = useTransaction();
   const [isLoading, setIsLoading] = useState(true);
-  const [transactions, setTransactions] = useState<IncomeTransaction[]>([]);
-  const { refreshing, setRefreshing } = useApp();
-
-  const fetchData = async () => {
-    if (!selectedMonth) {
-      setIsLoading(false);
-      return;
-    }
-    setTransactions([]);
-
-    try {
-      setIsLoading(true);
-      const balanceResponse = await api.get(
-        "/api/transactions/income/balance",
-        {
-          params: { month: selectedMonth },
-        }
-      );
-
-      const transactionsResponse = await api.get("/api/transactions/income", {
-        params: { month: selectedMonth },
-      });
-
-      setIncomeBalance(balanceResponse.data.balance);
-      setTransactions(transactionsResponse.data.transactions);
-      setRefreshing(false);
-    } catch (error) {
-      console.error("Error fetching income transactions:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    fetchData();
-  }, [selectedMonth, refreshSignal]);
+    setIsLoading(incomeBalance === null || incomeTransactions === undefined);
+    if (incomeBalance !== null && incomeTransactions !== undefined) {
+      fadeAnim.setValue(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [incomeBalance, incomeTransactions]);
 
-    useEffect(() => {
-      if (refreshing) {
-        fetchData();
-      }
-    }, [refreshing]);
-
-  // Handle transaction press
-  const handleTransactionPress = (transaction: IncomeTransaction) => {
+  const handleTransactionPress = (transaction: IncomeTransactionType) => {
     console.log("Transaction pressed:", transaction.id);
   };
-
-  const groupedTransactions = groupTransactionsByDate(transactions);
 
   return (
     <View style={styles.mainContainer}>
@@ -99,13 +49,13 @@ export default function IncomeTransactions() {
             />
             <Text style={styles.title}>Umumiy kirim:</Text>
           </View>
-          <Text style={styles.amount}>
+          <Animated.Text style={[styles.amount, { opacity: fadeAnim }]}>
             {isLoading ? (
               <ActivityIndicator color={colors.green} />
             ) : (
               <>{beautySumm(incomeBalance)}</>
             )}
-          </Text>
+          </Animated.Text>
         </View>
       </View>
 
@@ -125,13 +75,19 @@ export default function IncomeTransactions() {
           </View>
         )}
 
-        {Object.entries(groupedTransactions).map(
-          ([date, transactionsForDate]) => (
-            <View key={date}>
+        {!isLoading && incomeTransactions?.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Tranzaksiyalar mavjud emas</Text>
+          </View>
+        )}
+
+        {!isLoading &&
+          incomeTransactions?.map(({ dateKey, transactions }) => (
+            <View key={dateKey}>
               <Text style={styles.transactionsDate}>
-                {formatDateDisplay(transactionsForDate[0].createdAt)}
+                {formatDateDisplay(dateKey)}
               </Text>
-              {transactionsForDate.map((transaction) => (
+              {transactions.map((transaction) => (
                 <TouchableOpacity
                   key={transaction.id}
                   style={styles.transactionBox}
@@ -145,7 +101,7 @@ export default function IncomeTransactions() {
                     ]}
                   >
                     <MaterialIcons
-                      name={(transaction.icon as any) || "attach-money"}
+                      name={(transaction.icon as React.ComponentProps<typeof MaterialIcons>["name"]) || "attach-money"}
                       size={24}
                       color={colors.white}
                     />
@@ -160,7 +116,7 @@ export default function IncomeTransactions() {
                   </View>
                   <View style={styles.transactionDetails}>
                     <Text style={styles.transactionTime}>
-                      {formatTime(transaction.createdAt)}
+                      {transaction.time}
                     </Text>
                     <Text
                       style={[
@@ -174,8 +130,7 @@ export default function IncomeTransactions() {
                 </TouchableOpacity>
               ))}
             </View>
-          )
-        )}
+          ))}
       </ScrollView>
     </View>
   );

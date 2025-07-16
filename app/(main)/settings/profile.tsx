@@ -17,13 +17,13 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [homeRefreshing, setHomeRefreshing] = useState(false);
 
   const fetchData = async () => {
     try {
       console.log('Fetching data...');
       setIsLoading(true);
-      setRefreshing(true);
+      setHomeRefreshing(true);
       const response = await api.get('/api/users/me');
       const data = response.data;
       setUserData(data);
@@ -33,7 +33,7 @@ export default function ProfileScreen() {
       Alert.alert('Error', 'Failed to fetch user data');
     } finally {
       setIsLoading(false);
-      setRefreshing(false);
+      setHomeRefreshing(false);
     }
   };
 
@@ -87,7 +87,7 @@ export default function ProfileScreen() {
         contentContainerStyle={[styles.scrollContainer, globalStyles.container]}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={homeRefreshing}
             onRefresh={onRefresh}
             colors={[colors.white]}
             tintColor={colors.white}

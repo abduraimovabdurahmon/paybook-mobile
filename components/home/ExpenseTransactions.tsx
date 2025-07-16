@@ -1,38 +1,69 @@
 import colors from "@/constants/Colors";
 import { useTransaction } from "@/context/TransactionContext";
-import api from "@/services/api";
 import { beautySumm } from "@/utils/functions";
 import { FontAwesome5, Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 
-export default function ExpenseTransactions({refreshing}: any) {
-const { selectedMonth, refreshSignal } = useTransaction();
-  const [expenseBalance, setExpenseBalance] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+interface ExpenseTransaction {
+  id: string;
+  icon: string;
+  bgColor: string;
+  title: string;
+  description: string;
+  amount: number;
+  createdAt: string;
+}
 
-  const fetchData = async () => {
-    if (!selectedMonth) {
-      setIsLoading(false);
-      return;
+export default function ExpenseTransactions() {
+
+
+  const { 
+    expenseBalance
+  } = useTransaction();
+
+  const fadeAnim = useRef(new Animated.Value(0)).current; 
+
+
+  const [isLoading, setIsLoading] = useState(false);
+
+
+  const [transactions, setTransactions] = useState<ExpenseTransaction[]>([]);
+
+
+  useEffect(()=>{
+    setIsLoading(expenseBalance === null);
+    if(expenseBalance){
+      fadeAnim.setValue(0);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
     }
+  }, [expenseBalance])
 
-    try {
-      setIsLoading(true);
-      const response = await api.get('/api/transactions/expense/balance', {
-        params: { month: selectedMonth },
-      });
-      setExpenseBalance(response.data.balance);
-    } catch (error) {
-      console.error('Error fetching expense transactions:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // const fetchData = async () => {
+  //   if (!selectedMonth) {
+  //     return;
+  //   }
+  //   setTransactions([]);
 
-  useEffect(() => {
-    fetchData();
-  }, [selectedMonth, refreshSignal]);
+  //   try {
+      
+
+  //     const transactionsResponse = await api.get("/api/transactions/income", {
+  //       params: { month: selectedMonth },
+  //     });
+
+  //     setTransactions(transactionsResponse.data.transactions);
+      
+  //   } catch (error) {
+  //     console.error("Error fetching income transactions:", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
 
   
@@ -51,13 +82,13 @@ const { selectedMonth, refreshSignal } = useTransaction();
             />
             <Text style={styles.title}>Umumiy chiqim:</Text>
           </View>
-          <Text style={styles.amount}>
+          <Animated.Text style={[styles.amount, { opacity: fadeAnim }]}>
             {isLoading ? (
               <ActivityIndicator color={colors.red}/>
             ) : (
               <>-{beautySumm(expenseBalance)}</>
             )}
-          </Text>
+          </Animated.Text>
         </View>
       </View>
 
