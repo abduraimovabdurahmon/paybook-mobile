@@ -1,7 +1,7 @@
 import colors from "@/constants/Colors";
 import { IncomeTransactionType } from "@/constants/Types";
 import { useTransaction } from "@/context/TransactionContext";
-import { beautySumm, formatDateDisplay, shortenDescription } from "@/utils/functions";
+import { beautySumm, formatDateDisplay } from "@/utils/functions";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -24,7 +24,6 @@ export default function IncomeTransactions() {
   useEffect(() => {
     setIsLoading(incomeBalance === null || incomeTransactions === undefined);
     if (incomeBalance !== null && incomeTransactions !== undefined) {
-      console.log(incomeTransactions)
       fadeAnim.setValue(0);
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -91,44 +90,49 @@ export default function IncomeTransactions() {
                 {formatDateDisplay(dateKey)}
               </Text>
               {transactions?.map((transaction) => (
-                <TouchableOpacity
+                 <TouchableOpacity
                   key={transaction.id}
                   style={styles.transactionBox}
                   onPress={() => handleTransactionPress(transaction)}
                   activeOpacity={0.7}
                 >
-                  <View
-                    style={[
-                      styles.transactionIconBox,
-                      { backgroundColor: transaction.bgColor || colors.blue },
-                    ]}
-                  >
+                  <View style={[styles.transactionIconBox, { backgroundColor: transaction.bgColor || colors.blue }]}>
                     <MaterialIcons
                       name={(transaction.icon as React.ComponentProps<typeof MaterialIcons>["name"]) || "attach-money"}
                       size={24}
                       color={colors.white}
                     />
                   </View>
-                  <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionTitle}>
-                      {transaction.title}
-                    </Text>
-                    <Text style={styles.transactionDescription}>
-                      {shortenDescription(transaction.description)}
-                    </Text>
-                  </View>
-                  <View style={styles.transactionDetails}>
-                    <Text style={styles.transactionTime}>
-                      {transaction.time}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.transactionAmount,
-                        { color: colors.green },
-                      ]}
-                    >
-                      +{beautySumm(transaction.amount)} so'm
-                    </Text>
+                  <View style={styles.transactionContent}>
+                    <View style={styles.transactionInfo}>
+                      <Text
+                        style={styles.transactionTitle}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {transaction.title}
+                      </Text>
+                      <Text style={styles.transactionTime}>
+                        {transaction.time}
+                      </Text>
+                    </View>
+                    <View style={styles.transactionDetails}>
+                      <Text
+                        style={styles.transactionDescription}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {transaction.description}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.transactionAmount,
+                          { color: colors.green },
+                        ]}
+                      >
+                        +{beautySumm(transaction.amount)} so'm
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -204,48 +208,53 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
-    width: "99%",
-    marginLeft: "auto",
-    marginRight: "auto",
+    width: "100%",
     marginBottom: 12,
   },
   transactionIconBox: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: colors.green,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
-  transactionInfo: {
+  transactionContent: {
     flex: 1,
-    marginRight: 8,
+    flexDirection: "column",
+  },
+  transactionInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
   },
   transactionTitle: {
-    fontSize: 12,
+    fontSize: 14,
     color: colors.dark,
     fontWeight: "500",
     fontFamily: "JetBrainsMono-Medium",
-    marginBottom: 4,
-  },
-  transactionDescription: {
-    fontSize: 10,
-    color: colors.gray,
-    fontFamily: "JetBrainsMono-Regular",
-  },
-  transactionDetails: {
-    alignItems: "flex-end",
+    flex: 1,
   },
   transactionTime: {
     fontSize: 12,
     color: colors.gray,
     fontFamily: "JetBrainsMono-Regular",
-    marginBottom: 4,
+  },
+  transactionDetails: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  transactionDescription: {
+    fontSize: 10,
+    color: colors.gray,
+    fontFamily: "JetBrainsMono-Regular",
+    flex: 1,
+    marginRight: 8,
   },
   transactionAmount: {
     fontSize: 14,
-    color: colors.green,
     fontWeight: "500",
     fontFamily: "JetBrainsMono-Bold",
   },

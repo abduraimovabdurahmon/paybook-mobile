@@ -46,3 +46,13 @@ export type GroupedDebtTransactionType = {
   dateKey: string; // "DD - Oy" formatida, masalan, "16 - Iyul"
   transactions: DebtTransactionType[];
 };
+
+
+export type CategoryType = {
+  id: string; // UUID backenddan string sifatida keladi
+  bgColor: string; // Rangi, masalan, "#3366FF"
+  icon: string; // Ikkilik kodli ikon nomi, masalan, "transport-icon"
+  keyword: string; // Kalit so'z, masalan, "transport"
+  title: string; // Kategoriya nomi, masalan, "Transportation"
+  type: 'INCOME' | 'EXPENSE' | 'DEBT'; // Kategoriya turi, "INCOME" yoki "EXPENSE" yoki "DEBT"
+};

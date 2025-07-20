@@ -1,12 +1,7 @@
 import colors from '@/constants/Colors';
-import {
-  FontAwesome,
-  Ionicons,
-  MaterialCommunityIcons,
-  MaterialIcons,
-} from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-import React, { useState } from 'react';
+import api from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -18,110 +13,47 @@ import {
   View,
 } from 'react-native';
 
+interface Category {
+  id: string;
+  bgColor: string;
+  icon: string;
+  keyword: string;
+  title: string;
+  type: 'INCOME' | 'EXPENSE' | 'DEBT';
+}
+
 export default function AddTransactionScreen() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [transactionType, setTransactionType] = useState<'Income' | 'Expense' | 'Loan'>('Income');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [selectedFriend, setSelectedFriend] = useState('');
 
-  const categories = {
-    Income: [
-      {
-        label: 'Oylik ish haqqi',
-        value: 'Oylik ish haqqi',
-        icon: <MaterialIcons name="work" size={24} color={colors.white} />,
-        iconBgColor: colors.primary,
-      },
-      {
-        label: 'Freelance',
-        value: 'Freelance',
-        icon: <FontAwesome name="laptop" size={24} color={colors.white} />,
-        iconBgColor: colors.green,
-      },
-      {
-        label: 'Investitsiya',
-        value: 'Investitsiya',
-        icon: <MaterialIcons name="trending-up" size={24} color={colors.white} />,
-        iconBgColor: colors.blue,
-      },
-      {
-        label: 'Sovg\'a',
-        value: 'Sovg\'a',
-        icon: <Ionicons name="gift" size={24} color={colors.white} />,
-        iconBgColor: colors.purple,
-      },
-      {
-        label: 'Boshqa',
-        value: 'Boshqa',
-        icon: <MaterialIcons name="attach-money" size={24} color={colors.white} />,
-        iconBgColor: colors.orange,
-      },
-    ],
-    Expense: [
-      {
-        label: 'Oziq-ovqat',
-        value: 'Oziq-ovqat',
-        icon: <MaterialCommunityIcons name="food" size={24} color={colors.white} />,
-        iconBgColor: colors.orange,
-      },
-      {
-        label: 'Transport',
-        value: 'Transport',
-        icon: <MaterialIcons name="directions-car" size={24} color={colors.white} />,
-        iconBgColor: colors.blue,
-      },
-      {
-        label: 'Kommunal',
-        value: 'Kommunal',
-        icon: <MaterialIcons name="home" size={24} color={colors.white} />,
-        iconBgColor: colors.teal,
-      },
-      {
-        label: 'Kiyim-kechak',
-        value: 'Kiyim-kechak',
-        icon: <FontAwesome name="shopping-bag" size={24} color={colors.white} />,
-        iconBgColor: colors.pink,
-      },
-      {
-        label: 'Boshqa',
-        value: 'Boshqa',
-        icon: <MaterialIcons name="category" size={24} color={colors.white} />,
-        iconBgColor: colors.gray,
-      },
-    ],
-    Loan: [
-      {
-        label: 'Qarz oldim',
-        value: 'Qarz oldim',
-        icon: <Ionicons name="arrow-down-circle" size={24} color={colors.white} />,
-        iconBgColor: colors.red,
-      },
-      {
-        label: 'Qarz berdim',
-        value: 'Qarz berdim',
-        icon: <Ionicons name="arrow-up-circle" size={24} color={colors.white} />,
-        iconBgColor: colors.green,
-      },
-    ],
+  const fetchData = async () => {
+    try {
+      const response = await api.get('/api/categories/list');
+      if (response.data && Array.isArray(response.data)) {
+        setCategories(response.data);
+      } else {
+        console.error('Invalid data format:', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
   };
 
-  const friends = [
-    { label: 'Azizov Sardor', value: 'Azizov Sardor' },
-    { label: 'Karimova Dilfuza', value: 'Karimova Dilfuza' },
-    { label: 'Jamolov Sherzod', value: 'Jamolov Sherzod' },
-    { label: 'Opaqulov Jasur', value: 'Opaqulov Jasur' },
-    { label: 'Nosirova Malika', value: 'Nosirova Malika' },
-    { label: 'Toshmatov Bahodir', value: 'Toshmatov Bahodir' },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleSubmit = () => {
     if (!selectedCategory || !amount || (transactionType === 'Loan' && !selectedFriend)) {
-      alert('Iltimos, barcha majburiy maydonlarni to\'ldiring!');
+      alert("Iltimos, barcha majburiy maydonlarni to'ldiring!");
       return;
     }
     if (transactionType !== 'Loan' && !description) {
-      alert('Iltimos, tavsifni kiriting!');
+      alert("Iltimos, tavsifni kiriting!");
       return;
     }
     console.log({
@@ -135,8 +67,16 @@ export default function AddTransactionScreen() {
     setDescription('');
     setAmount('');
     setSelectedFriend('');
-    alert('Tranzaksiya qo\'shildi!');
+    alert("Tranzaksiya qo'shildi!");
   };
+
+  // Kategoriyalarni tranzaksiya turi bo'yicha filtrlash
+  const filteredCategories = categories.filter(
+    (cat) =>
+      (transactionType === 'Income' && cat.type === 'INCOME') ||
+      (transactionType === 'Expense' && cat.type === 'EXPENSE') ||
+      (transactionType === 'Loan' && cat.type === 'DEBT')
+  );
 
   return (
     <KeyboardAvoidingView
@@ -214,28 +154,45 @@ export default function AddTransactionScreen() {
         <View style={styles.categoryContainer}>
           <Text style={styles.sectionTitle}>Kategoriyani tanlang</Text>
           <View style={styles.categoryGrid}>
-            {categories[transactionType].map((cat) => (
-              <TouchableOpacity
-                key={cat.value}
-                style={[
-                  styles.categoryItem,
-                  selectedCategory === cat.value && styles.categoryItemActive,
-                ]}
-                onPress={() => setSelectedCategory(cat.value)}
-              >
-                <View style={[styles.categoryIcon, { backgroundColor: cat.iconBgColor }]}>
-                  {cat.icon}
-                </View>
-                <Text
+            {filteredCategories.length > 0 ? (
+              filteredCategories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.id}
                   style={[
-                    styles.categoryText,
-                    selectedCategory === cat.value && styles.categoryTextActive,
+                    styles.categoryItem,
+                    selectedCategory === cat.id && styles.categoryItemActive,
                   ]}
+                  onPress={() => setSelectedCategory(cat.id)}
                 >
-                  {cat.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <View
+                    style={[
+                      styles.categoryIcon,
+                      { backgroundColor: cat.bgColor },
+                    ]}
+                  >
+                    <Ionicons
+                      name={cat.icon as keyof typeof Ionicons.glyphMap} // Ikona nomini API’dan kelgan ma’lumot sifatida ishlatamiz
+                      size={24}
+                      color={colors.white}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      selectedCategory === cat.id && styles.categoryTextActive,
+                    ]}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {cat.title}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={styles.noCategoryText}>
+                Ushbu turdagi kategoriyalar topilmadi
+              </Text>
+            )}
           </View>
         </View>
 
@@ -243,28 +200,14 @@ export default function AddTransactionScreen() {
           {transactionType === 'Loan' ? (
             <>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Do'stni tanlang</Text>
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={selectedFriend}
-                    onValueChange={(itemValue) => setSelectedFriend(itemValue)}
-                    style={styles.picker}
-                    dropdownIconColor={colors.primary}
-                    prompt="Do'stni tanlang"
-                    mode="dropdown"
-                    itemStyle={{ fontFamily: 'JetBrainsMono-Medium' }}
-                    
-                  >
-                    {friends.map((friend) => (
-                      <Picker.Item
-                        key={friend.value}
-                        label={friend.label}
-                        value={friend.value}
-                        style={{ fontFamily: 'JetBrainsMono-Medium' }}
-                      />
-                    ))}
-                  </Picker>
-                </View>
+                <Text style={styles.label}>Do'st ismi</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={selectedFriend}
+                  onChangeText={setSelectedFriend}
+                  placeholder="Do'st ismini kiriting"
+                  placeholderTextColor={colors.gray}
+                />
               </View>
 
               <View style={styles.inputContainer}>
@@ -382,11 +325,11 @@ const styles = StyleSheet.create({
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     gap: 8,
   },
   categoryItem: {
-    width: '30%', // Adjust for 3 columns; use '45%' for 2 columns
+    width: '30%',
     alignItems: 'center',
     padding: 8,
     borderRadius: 12,
@@ -394,6 +337,8 @@ const styles = StyleSheet.create({
   },
   categoryItemActive: {
     backgroundColor: colors.primary + '20',
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   categoryIcon: {
     width: 48,
@@ -404,7 +349,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   categoryText: {
-    fontSize: 10, // Smaller font size for app-like labels
+    fontSize: 12,
     fontWeight: '500',
     color: colors.dark,
     fontFamily: 'JetBrainsMono-Medium',
@@ -412,6 +357,13 @@ const styles = StyleSheet.create({
   },
   categoryTextActive: {
     color: colors.primary,
+    fontWeight: 'bold',
+  },
+  noCategoryText: {
+    fontSize: 14,
+    color: colors.gray,
+    textAlign: 'center',
+    fontFamily: 'JetBrainsMono-Regular',
   },
   formContainer: {
     backgroundColor: colors.white,
@@ -432,17 +384,6 @@ const styles = StyleSheet.create({
     color: colors.dark,
     fontFamily: 'JetBrainsMono-Medium',
     marginBottom: 8,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: colors.gray + '50',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  picker: {
-    minHeight: 50,
-    color: colors.dark,
-    fontFamily: 'JetBrainsMono-Regular',
   },
   textInput: {
     borderWidth: 1,

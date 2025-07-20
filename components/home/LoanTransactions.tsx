@@ -1,25 +1,33 @@
 import colors from "@/constants/Colors";
 import { DebtTransactionType } from "@/constants/Types";
 import { useTransaction } from "@/context/TransactionContext";
-import { beautySumm, formatDateDisplay, shortenDescription } from "@/utils/functions";
+import {
+  beautySumm,
+  formatDateDisplay
+} from "@/utils/functions";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
+import {
+  ActivityIndicator,
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function LoanTransactions() {
-
   const { debtBalance, debtTransactions } = useTransaction();
-
   const [isLoading, setIsLoading] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-
-  const fadeAnim = useRef(new Animated.Value(0)).current; 
-
-
-  useEffect(()=>{
-    setIsLoading(debtBalance.totalBorrow === null || debtBalance.totalLend === null);
-    if(debtBalance.totalBorrow && debtBalance.totalLend){
+  useEffect(() => {
+    setIsLoading(
+      debtBalance.totalBorrow === null || debtBalance.totalLend === null
+    );
+    if (debtBalance.totalBorrow !== null && debtBalance.totalLend !== null) {
+      console.log(JSON.stringify(debtTransactions));
       fadeAnim.setValue(0);
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -27,13 +35,11 @@ export default function LoanTransactions() {
         useNativeDriver: true,
       }).start();
     }
-  },[debtBalance])
+  }, [debtBalance]);
 
-
-    const handleTransactionPress = (transaction: DebtTransactionType) => {
-      console.log("Transaction pressed:", transaction.id);
-    };
-
+  const handleTransactionPress = (transaction: DebtTransactionType) => {
+    console.log("Transaction pressed:", transaction.id);
+  };
 
   return (
     <View style={styles.mainContainer}>
@@ -51,15 +57,17 @@ export default function LoanTransactions() {
               />
               <Text style={styles.title}>Qarz oldim:</Text>
             </View>
-            <Animated.Text style={[styles.amount, {color: colors.red, opacity: fadeAnim}]}>
+            <Animated.Text
+              style={[styles.amount, { color: colors.red, opacity: fadeAnim }]}
+            >
               {isLoading ? (
-                <ActivityIndicator color={colors.red}/>
+                <ActivityIndicator color={colors.red} />
               ) : (
-                <>-{beautySumm(debtBalance.totalBorrow)}</>
+                <>-{beautySumm(debtBalance.totalBorrow)} so'm</>
               )}
             </Animated.Text>
           </View>
-          
+
           {/* Qarz berdim (I'm owed) */}
           <View style={styles.balanceItem}>
             <View style={styles.iconTitleContainer}>
@@ -71,11 +79,16 @@ export default function LoanTransactions() {
               />
               <Text style={styles.title}>Qarz berdim:</Text>
             </View>
-             <Animated.Text style={[styles.amount, {color: colors.green, opacity: fadeAnim}]}>
+            <Animated.Text
+              style={[
+                styles.amount,
+                { color: colors.green, opacity: fadeAnim },
+              ]}
+            >
               {isLoading ? (
-                <ActivityIndicator color={colors.green}/>
+                <ActivityIndicator color={colors.green} />
               ) : (
-                <>+{beautySumm(debtBalance.totalLend)}</>
+                <>+{beautySumm(debtBalance.totalLend)} so'm</>
               )}
             </Animated.Text>
           </View>
@@ -117,36 +130,53 @@ export default function LoanTransactions() {
                   onPress={() => handleTransactionPress(transaction)}
                   activeOpacity={0.7}
                 >
-                  <View
-                    style={[
-                      styles.transactionIconBox,
-                      { backgroundColor: transaction.bgColor || colors.blue },
-                    ]}
-                  >
-                    <Feather name={
-                      (transaction.icon as React.ComponentProps<typeof Feather>["name"]) || "dollar-sign"
-                    } size={24} color={colors.white} />
+                  <View style={[styles.transactionIconBox, { backgroundColor: transaction.bgColor }]}>
+                    <Feather
+                      name={
+                        (transaction.icon as React.ComponentProps<
+                          typeof Feather
+                        >["name"]) || "dollar-sign"
+                      }
+                      size={24}
+                      color={colors.white}
+                    />
                   </View>
-                  <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionTitle}>
-                      {transaction.title}
-                    </Text>
-                    <Text style={styles.transactionDescription}>
-                      {shortenDescription(transaction.description)}
-                    </Text>
-                  </View>
-                  <View style={styles.transactionDetails}>
-                    <Text style={styles.transactionTime}>
-                      {transaction.time}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.transactionAmount,
-                        { color: transaction.type === "BORROW" ? colors.red : colors.green },
-                      ]}
-                    >
-                      {transaction.type === "BORROW" ? "-" : "+"}{beautySumm(transaction.amount)} so'm
-                    </Text>
+                  <View style={styles.transactionContent}>
+                    <View style={styles.transactionInfo}>
+                      <Text
+                        style={styles.transactionTitle}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {transaction.title}
+                      </Text>
+                      <Text style={styles.transactionTime}>
+                        {transaction.time}
+                      </Text>
+                    </View>
+                    <View style={styles.transactionDetails}>
+                      <Text
+                        style={styles.transactionDescription}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {transaction.description}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.transactionAmount,
+                          {
+                            color:
+                              transaction.type === "BORROW"
+                                ? colors.red
+                                : colors.green,
+                          },
+                        ]}
+                      >
+                        {transaction.type === "BORROW" ? "-" : "+"}
+                        {beautySumm(transaction.amount)} so'm
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -180,12 +210,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   balanceItem: {
-    width: "48%", // Slightly less than half to account for space-between
-  },
-  textContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    width: "48%",
   },
   iconTitleContainer: {
     flexDirection: "row",
@@ -202,7 +227,8 @@ const styles = StyleSheet.create({
     fontFamily: "JetBrainsMono-Bold",
   },
   amount: {
-    fontSize: 14,
+    fontSize: 12,
+    marginTop: 8,
     fontWeight: "500",
     fontFamily: "JetBrainsMono-Bold",
   },
@@ -215,7 +241,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "JetBrainsMono-Bold",
     marginBottom: 8,
-    marginLeft: 10
+    marginLeft: 10,
   },
   transactionBox: {
     flexDirection: "row",
@@ -239,30 +265,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
-  transactionInfo: {
+  transactionContent: {
     flex: 1,
-    marginRight: 8,
+    flexDirection: "column",
+  },
+  transactionInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
   },
   transactionTitle: {
     fontSize: 14,
     color: colors.dark,
     fontWeight: "500",
     fontFamily: "JetBrainsMono-Medium",
-    marginBottom: 4,
-  },
-  transactionDescription: {
-    fontSize: 10,
-    color: colors.gray,
-    fontFamily: "JetBrainsMono-Regular",
-  },
-  transactionDetails: {
-    alignItems: "flex-end",
+    flex: 1, // Ensures title takes maximum space
   },
   transactionTime: {
     fontSize: 12,
     color: colors.gray,
     fontFamily: "JetBrainsMono-Regular",
-    marginBottom: 4,
+  },
+  transactionDetails: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  transactionDescription: {
+    fontSize: 10,
+    color: colors.gray,
+    fontFamily: "JetBrainsMono-Regular",
+    flex: 1, // Allows description to take available space
+    marginRight: 8,
   },
   transactionAmount: {
     fontSize: 14,
