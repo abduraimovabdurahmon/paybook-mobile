@@ -3,8 +3,8 @@
 // @/utils/functions.ts
 
 export const shortenDescription = (description: string): string => {
-  if (description.length > 15) {
-    return `${description.substring(0, 15)}...`;
+  if (description?.length > 15) {
+    return `${description?.substring(0, 15)}...`;
   }
   return description;
 };
@@ -14,7 +14,7 @@ export const beautySumm = (summ: number | null): string => {
     return "0.00";
   }
 
-  const summString = summ.toFixed(2).toString();
+  const summString = summ?.toFixed(2).toString();
   const parts = summString.split(".");
   const integerPart = parts[0];
   const decimalPart = parts[1] || "00";

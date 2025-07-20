@@ -5,7 +5,9 @@ import { useApp } from "@/context/AppContext";
 import { useTransaction } from "@/context/TransactionContext";
 import {
   fetchDebtBalance,
+  fetchDebtTransactionsList,
   fetchExpenseBalance,
+  fetchExpenseTransactionsList,
   fetchGeneralBalance,
   fetchIncomeBalance,
   fetchIncomeTransactionsList,
@@ -30,7 +32,11 @@ export default function HomeScreen() {
     debtBalance,
     setDebtBalance,
     incomeTransactions,
-    setIncomeTransactions
+    setIncomeTransactions,
+    expenseTransactions,
+    setExpenseTransactions,
+    debtTransactions,
+    setDebtTransactions,
   } = useTransaction();
 
   const { homeRefreshing } = useApp();
@@ -55,11 +61,15 @@ export default function HomeScreen() {
 
   const fetchAllTransactions = async () => {
     try {
-       const [income] = await Promise.all([
-          fetchIncomeTransactionsList({selectedMonth})
+       const [income, expense, debt] = await Promise.all([
+          fetchIncomeTransactionsList({selectedMonth}),
+          fetchExpenseTransactionsList({selectedMonth}),
+          fetchDebtTransactionsList({selectedMonth}),
        ]);
 
         setIncomeTransactions(income)
+        setExpenseTransactions(expense)
+        setDebtTransactions(debt)
     } catch (error) {
       console.log(error);
     }

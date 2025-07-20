@@ -1,19 +1,18 @@
 import colors from "@/constants/Colors";
+import { DebtTransactionType } from "@/constants/Types";
 import { useTransaction } from "@/context/TransactionContext";
-import { beautySumm } from "@/utils/functions";
-import { Ionicons } from "@expo/vector-icons";
+import { beautySumm, formatDateDisplay, shortenDescription } from "@/utils/functions";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-type DebtBalanceResponse = {
-  totalBorrow: number;
-  totalLend: number;
-}
 
 export default function LoanTransactions() {
-  const [isLoading, setIsLoading] = useState(false);
 
-  const {debtBalance} = useTransaction();
+  const { debtBalance, debtTransactions } = useTransaction();
+
+  const [isLoading, setIsLoading] = useState(true);
+
 
   const fadeAnim = useRef(new Animated.Value(0)).current; 
 
@@ -30,6 +29,10 @@ export default function LoanTransactions() {
     }
   },[debtBalance])
 
+
+    const handleTransactionPress = (transaction: DebtTransactionType) => {
+      console.log("Transaction pressed:", transaction.id);
+    };
 
 
   return (
@@ -84,98 +87,71 @@ export default function LoanTransactions() {
         showsVerticalScrollIndicator={false}
         style={styles.transactionsScroll}
       >
-        {/* 1. Qarz oldim */}
-        <Text style={styles.transactionsDate}>18-may</Text>
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, {backgroundColor: colors.red}]}>
-            <Ionicons name="arrow-down-circle" size={24} color={colors.white} />
+        {isLoading && (
+          <View style={styles.emptyContainer}>
+            <ActivityIndicator
+              size="large"
+              color={colors.primary}
+              style={{ marginTop: 20 }}
+            />
+            <Text style={styles.emptyText}>Yuklanmoqda ...</Text>
           </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Azizov Sardor</Text>
-            <Text style={styles.transactionDescription}>Avto ta'mirlash uchun qarz oldim</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>18:30</Text>
-            <Text style={[styles.transactionAmount, {color: colors.red}]}>-500,000 so'm</Text>
-          </View>
-        </View>
+        )}
 
-        {/* 2. Qarz berdim */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, {backgroundColor: colors.green}]}>
-            <Ionicons name="arrow-up-circle" size={24} color={colors.white} />
+        {!isLoading && debtTransactions?.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Tranzaksiyalar mavjud emas</Text>
           </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Karimova Dilfuza</Text>
-            <Text style={styles.transactionDescription}>Uy jihozlari uchun qarz berdim</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>15:20</Text>
-            <Text style={[styles.transactionAmount, {color: colors.green}]}>+250,000 so'm</Text>
-          </View>
-        </View>
+        )}
 
-        {/* 3. Qarz oldim */}
-        <Text style={styles.transactionsDate}>17-may</Text>
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, {backgroundColor: colors.red}]}>
-            <Ionicons name="arrow-down-circle" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Jamolov Sherzod</Text>
-            <Text style={styles.transactionDescription}>Telefon sotib olish uchun qarz oldim</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>09:00</Text>
-            <Text style={[styles.transactionAmount, {color: colors.red}]}>-1,000,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* 4. Qarz berdim */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, {backgroundColor: colors.green}]}>
-            <Ionicons name="arrow-up-circle" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Opaqulov Jasur</Text>
-            <Text style={styles.transactionDescription}>To'y uchun qarz berdim</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>08:45</Text>
-            <Text style={[styles.transactionAmount, {color: colors.green}]}>+750,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* 5. Qarz oldim */}
-        <Text style={styles.transactionsDate}>16-may</Text>
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, {backgroundColor: colors.red}]}>
-            <Ionicons name="arrow-down-circle" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Nosirova Malika</Text>
-            <Text style={styles.transactionDescription}>Tibbiyot xarajatlari uchun qarz oldim</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>11:30</Text>
-            <Text style={[styles.transactionAmount, {color: colors.red}]}>-350,000 so'm</Text>
-          </View>
-        </View>
-
-        {/* 6. Qarz berdim */}
-        <View style={styles.transactionBox}>
-          <View style={[styles.transactionIconBox, {backgroundColor: colors.green}]}>
-            <Ionicons name="arrow-up-circle" size={24} color={colors.white} />
-          </View>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.transactionTitle}>Toshmatov Bahodir</Text>
-            <Text style={styles.transactionDescription}>Biznes loyihasi uchun qarz berdim</Text>
-          </View>
-          <View style={styles.transactionDetails}>
-            <Text style={styles.transactionTime}>20:00</Text>
-            <Text style={[styles.transactionAmount, {color: colors.green}]}>+500,000 so'm</Text>
-          </View>
-        </View>
+        {!isLoading &&
+          debtTransactions?.map(({ dateKey, transactions }) => (
+            <View key={dateKey}>
+              <Text style={styles.transactionsDate}>
+                {formatDateDisplay(dateKey)}
+              </Text>
+              {transactions?.map((transaction) => (
+                <TouchableOpacity
+                  key={transaction.id}
+                  style={styles.transactionBox}
+                  onPress={() => handleTransactionPress(transaction)}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={[
+                      styles.transactionIconBox,
+                      { backgroundColor: transaction.bgColor || colors.blue },
+                    ]}
+                  >
+                    <Feather name={
+                      (transaction.icon as React.ComponentProps<typeof Feather>["name"]) || "dollar-sign"
+                    } size={24} color={colors.white} />
+                  </View>
+                  <View style={styles.transactionInfo}>
+                    <Text style={styles.transactionTitle}>
+                      {transaction.title}
+                    </Text>
+                    <Text style={styles.transactionDescription}>
+                      {shortenDescription(transaction.description)}
+                    </Text>
+                  </View>
+                  <View style={styles.transactionDetails}>
+                    <Text style={styles.transactionTime}>
+                      {transaction.time}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.transactionAmount,
+                        { color: transaction.type === "BORROW" ? colors.red : colors.green },
+                      ]}
+                    >
+                      {transaction.type === "BORROW" ? "-" : "+"}{beautySumm(transaction.amount)} so'm
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
       </ScrollView>
     </View>
   );
@@ -292,5 +268,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     fontFamily: "JetBrainsMono-Bold",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.gray,
+    fontFamily: "JetBrainsMono-Regular",
   },
 });

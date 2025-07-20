@@ -1,5 +1,5 @@
 // TransactionContext.tsx
-import { GroupedIncomeTransactionType } from '@/constants/Types';
+import { GroupedDebtTransactionType, GroupedExpenseTransactionType, GroupedIncomeTransactionType } from '@/constants/Types';
 import React, { createContext, useContext, useState } from 'react';
 
 type TransactionType = 'income' | 'expense' | 'loan';
@@ -42,6 +42,14 @@ interface TransactionContextType {
   incomeTransactions: GroupedIncomeTransactionType[];
   setIncomeTransactions: (incomeTransactions: GroupedIncomeTransactionType[]) => void;
 
+  // expense transactions
+  expenseTransactions: GroupedExpenseTransactionType[];
+  setExpenseTransactions: (expenseTransactions: GroupedExpenseTransactionType[]) => void;
+
+  // debt transactions
+  debtTransactions: GroupedDebtTransactionType[];
+  setDebtTransactions: (debtTransactions: GroupedDebtTransactionType[]) => void;
+
 }
 
 const TransactionContext = createContext<TransactionContextType | undefined>(undefined);
@@ -70,8 +78,15 @@ export const TransactionProvider: React.FC<{children: React.ReactNode}> = ({ chi
   // Debt balance
   const [debtBalance, setDebtBalance] = useState<DebtBalanceType>({ totalBorrow: null, totalLend: null });
 
-  // Transactions list 
+  // Income transactions list 
   const [incomeTransactions, setIncomeTransactions] = useState<GroupedIncomeTransactionType[]>([]);
+
+  // Expense transactions list
+  const [expenseTransactions, setExpenseTransactions] = useState<GroupedExpenseTransactionType[]>([]);
+
+  // Debt transactions list
+  const [debtTransactions, setDebtTransactions] = useState<GroupedDebtTransactionType[]>([]);
+
   const value = { 
     refreshSignal, 
     setRefreshSignal, 
@@ -89,6 +104,10 @@ export const TransactionProvider: React.FC<{children: React.ReactNode}> = ({ chi
     debtBalance, setDebtBalance,
     // Income transactions
     incomeTransactions, setIncomeTransactions,
+    // Expense transactions
+    expenseTransactions, setExpenseTransactions,
+    // Debt transactions
+    debtTransactions, setDebtTransactions,
   };
     
   

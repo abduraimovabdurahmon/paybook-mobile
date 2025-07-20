@@ -17,11 +17,14 @@ import {
 export default function IncomeTransactions() {
   const { incomeBalance, incomeTransactions } = useTransaction();
   const [isLoading, setIsLoading] = useState(true);
+
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     setIsLoading(incomeBalance === null || incomeTransactions === undefined);
     if (incomeBalance !== null && incomeTransactions !== undefined) {
+      console.log(incomeTransactions)
       fadeAnim.setValue(0);
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -87,7 +90,7 @@ export default function IncomeTransactions() {
               <Text style={styles.transactionsDate}>
                 {formatDateDisplay(dateKey)}
               </Text>
-              {transactions.map((transaction) => (
+              {transactions?.map((transaction) => (
                 <TouchableOpacity
                   key={transaction.id}
                   style={styles.transactionBox}

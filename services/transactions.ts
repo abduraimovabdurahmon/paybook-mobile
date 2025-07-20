@@ -81,3 +81,25 @@ export const fetchIncomeTransactionsList = async ({ selectedMonth }: { selectedM
         console.log(error);
     }
 }
+
+export const fetchExpenseTransactionsList = async ({ selectedMonth }: { selectedMonth: string }) => {
+    try {
+        const transactionsResponse = await api.get("/api/transactions/expense", {
+            params: { month: selectedMonth },
+        });
+        return transactionsResponse.data;
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+export const fetchDebtTransactionsList = async ({ selectedMonth }: { selectedMonth: string }) => {
+    try {
+        const transactionsResponse = await api.get("/api/transactions/debt", {
+            params: { month: selectedMonth },
+        });
+        return transactionsResponse.data;
+    } catch (error) {
+        console.log(error);
+    }
+}
